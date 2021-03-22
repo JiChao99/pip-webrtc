@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <style type="text/css">
+        body {
+            padding: 1% 0%;
+        }
+        
+        #video {
+            border: 1px solid #999;
+            width: 80%;
+        }
+        
+        .error {
+            color: red;
+        }
+        
+        .warn {
+            color: orange;
+        }
+        
+        .info {
+            color: darkgreen;
+        }
+    </style>
+    <title>screen</title>
+</head>
+
+<body id="body">
+    <p>This example shows you the contents of the selected part of your display. Click the Start Capture button to begin.</p>
+    <p>then you can pic in pic it.</p>
+    <p><button id="start">Start Capture</button> <button id="stop">Stop Capture</button> <button id="pip">Pic in Pic</button></p>
+
+    <video id="video" autoplay controls></video>
+    <br>
+
+    <strong>Log:</strong>
+    <br>
+    <pre id="log"></pre>
+</body>
+<bottom>
+    create by <a href="https://blog.jichao.top">alec.ji</a> ♥
+</bottom>
+<script>
+    const videoElem = document.getElementById("video");
+    const logElem = document.getElementById("log");
+    const startElem = document.getElementById("start");
+    const stopElem = document.getElementById("stop");
+    const pipElem = document.getElementById("pip");
+
+    if (!document.pictureInPictureEnabled ||
+        videoElem.disablePictureInPicture
+    ) {
+        document.getElementById("#body").innerHTML = "not support, please use edge or chrome";
+    }
+
+    // Options for getDisplayMedia()
+
+    var displayMediaOptions = {
+        video: {
+            cursor: "always"
+        },
+        audio: false
+    };
+
+    // Set event listeners for the start and stop buttons
+    startElem.addEventListener("click", function(evt) {
+        startCapture();
+    }, false);
+
+    stopElem.addEventListener("click", function(evt) {
+        stopCapture();
+    }, false);
+    pipElem.addEventListener("click", function(evt) {
+        try {
+            if (document.pictureInPictureElement) {
+                document.exitPictureInPicture();
+            }
+            videoElem.requestPictureInPicture();
+        } catch (err) {
+            console.error(err);
+        }
+    })
+
+    console.log = msg => logElem.innerHTML += `${msg}<br>`;
+    console.error = msg => logElem.innerHTML += `<span class="error">${msg}</span><br>`;
+    console.warn = msg => logElem.innerHTML += `<span class="warn">${msg}<span><br>`;
+    console.info = msg => logElem.innerHTML += `<span class="info">${msg}</span><br>`;
+    async function startCapture() {
+        logElem.innerHTML = "";
+        try {
+            videoElem.srcObject = await navigator.mediaDevices.getDisplayMedia(displayMediaOptions);
+            dumpOptionsInfo();
+        } catch (err) {
+            console.error("Error: " + err);
+        }
+    }
+
+    function stopCapture(evt) {
+        let tracks = videoElem.srcObject.getTracks();
+
+        tracks.forEach(track => track.stop());
+        videoElem.srcObject = null;
+    }
+
+    function dumpOptionsInfo() {
+        const videoTrack = videoElem.srcObject.getVideoTracks()[0];
+        var setting = videoTrack.getSettings();
+        videoElem.style.height = videoElem.clientWidth / (setting.width / setting.height);
+
+        console.info("Track settings:");
+        console.info(JSON.stringify(videoTrack.getSettings(), null, 2));
+        console.info("Track constraints:");
+        console.info(JSON.stringify(videoTrack.getConstraints(), null, 2));
+    }
+</script>
+
+</html>
